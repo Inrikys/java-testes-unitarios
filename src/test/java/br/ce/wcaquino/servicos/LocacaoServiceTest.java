@@ -4,7 +4,9 @@ import java.util.Date;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
@@ -13,8 +15,11 @@ import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTest {
 
+	@Rule
+	public ErrorCollector error = new ErrorCollector();
+
 	@Test
-	public void teste() {
+	public void testeLocacao() {
 
 		// Cenario
 		LocacaoService service = new LocacaoService();
@@ -33,9 +38,18 @@ public class LocacaoServiceTest {
 
 		// AssertThat
 		// Verifique que o valor da locação é igual a 5.0
-		Assert.assertThat(locacao.getValor(), CoreMatchers.is(CoreMatchers.equalTo(5.0)));
-		Assert.assertThat(locacao.getValor(), CoreMatchers.is(CoreMatchers.not(5.0)));
-		Assert.assertThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()), CoreMatchers.is(true));
-		Assert.assertThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)), CoreMatchers.is(true));
+		// Assert.assertThat(locacao.getValor(),
+		// CoreMatchers.is(CoreMatchers.equalTo(5.0)));
+		// Assert.assertThat(locacao.getValor(),
+		// CoreMatchers.is(CoreMatchers.not(5.0)));
+		// Assert.assertThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new
+		// Date()), CoreMatchers.is(true));
+		// Assert.assertThat(DataUtils.isMesmaData(locacao.getDataRetorno(),
+		// DataUtils.obterDataComDiferencaDias(1)), CoreMatchers.is(true));
+
+		// Error collector
+		error.checkThat(locacao.getValor(), CoreMatchers.is(CoreMatchers.equalTo(5.0)));
+		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()), CoreMatchers.is(true));
+		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)), CoreMatchers.is(true));
 	}
 }
