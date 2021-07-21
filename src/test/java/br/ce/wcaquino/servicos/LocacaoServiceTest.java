@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
+import org.junit.rules.ExpectedException;
 
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
@@ -17,9 +18,12 @@ public class LocacaoServiceTest {
 
 	@Rule
 	public ErrorCollector error = new ErrorCollector();
+	
+	@Rule
+	public ExpectedException exception = ExpectedException.none();
 
 	@Test
-	public void testeLocacao() {
+	public void testeLocacao() throws Exception {
 
 		// Cenario
 		LocacaoService service = new LocacaoService();
@@ -30,26 +34,68 @@ public class LocacaoServiceTest {
 		Locacao locacao = service.alugarFilme(usuario, filme);
 
 		// Verificação
-		// Assert.assertEquals(5.0, locacao.getValor(), 0.01);
-		// Assert.assertTrue(DataUtils.isMesmaData(locacao.getDataLocacao(), new
-		// Date()));
-		// Assert.assertTrue(DataUtils.isMesmaData(locacao.getDataRetorno(),
-		// DataUtils.obterDataComDiferencaDias(1)));
-
-		// AssertThat
-		// Verifique que o valor da locação é igual a 5.0
-		// Assert.assertThat(locacao.getValor(),
-		// CoreMatchers.is(CoreMatchers.equalTo(5.0)));
-		// Assert.assertThat(locacao.getValor(),
-		// CoreMatchers.is(CoreMatchers.not(5.0)));
-		// Assert.assertThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new
-		// Date()), CoreMatchers.is(true));
-		// Assert.assertThat(DataUtils.isMesmaData(locacao.getDataRetorno(),
-		// DataUtils.obterDataComDiferencaDias(1)), CoreMatchers.is(true));
-
 		// Error collector
 		error.checkThat(locacao.getValor(), CoreMatchers.is(CoreMatchers.equalTo(5.0)));
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()), CoreMatchers.is(true));
-		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)), CoreMatchers.is(true));
+		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)),
+				CoreMatchers.is(true));
+
 	}
+	
+	// VERIFICAR SE ESTÁ TRATANDO EXCEÇÕES
+	// Forma elegante
+	@Test(expected = Exception.class)
+	public void testeLocacao_filmeSemEstoque() throws Exception {
+
+		// Cenario
+		LocacaoService service = new LocacaoService();
+		Usuario usuario = new Usuario("Usuario 1");
+		Filme filme = new Filme("Filme 1", 0, 5.0);
+
+		// Ação
+		service.alugarFilme(usuario, filme);
+
+		// Verificação
+		// Através da Exception
+	}
+
+	// Forma robusta
+	// Captura exceção e verifica mensagem
+	@Test
+	public void testeLocacao_filmeSemEstoque_2() {
+
+		// Cenario
+		LocacaoService service = new LocacaoService();
+		Usuario usuario = new Usuario("Usuario 1");
+		Filme filme = new Filme("Filme 1", 0, 5.0);
+
+		try {
+			// Ação
+			service.alugarFilme(usuario, filme);
+			Assert.fail("Deveria ter lançado uma exceção");
+		} catch (Exception e) {
+			// Verificação
+			Assert.assertThat(e.getMessage(), CoreMatchers.is("Filme sem estoque"));
+		}
+	}
+	
+	// Forma recente
+	@Test
+	public void testeLocacao_filmeSemEstoque_3() throws Exception {
+
+		// Cenario
+		LocacaoService service = new LocacaoService();
+		Usuario usuario = new Usuario("Usuario 1");
+		Filme filme = new Filme("Filme 1", 0, 5.0);
+		
+		// Verificação antes da ação (O que é esperado da próxima ação)
+		exception.expect(Exception.class);
+		exception.expectMessage("Filme sem estoque");
+
+		// Ação
+		service.alugarFilme(usuario, filme);
+
+
+	}
+
 }
