@@ -1,4 +1,5 @@
-package br.ce.wcaquino.servicos;
+package br.ce.wcaquino.apoio;
+
 
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
