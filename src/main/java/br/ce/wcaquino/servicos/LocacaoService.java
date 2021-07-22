@@ -7,15 +7,25 @@ import java.util.Date;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
+import br.ce.wcaquino.exception.FilmeSemEstoqueException;
+import br.ce.wcaquino.exception.LocadoraException;
 
 public class LocacaoService {
 
-	public Locacao alugarFilme(Usuario usuario, Filme filme) throws Exception {
-		
-		if(filme.getEstoque() == 0) {
-			throw new Exception("Filme sem estoque");
+	public Locacao alugarFilme(Usuario usuario, Filme filme) throws FilmeSemEstoqueException, LocadoraException {
+
+		if (usuario == null) {
+			throw new LocadoraException("Usuário vazio");
 		}
-		
+
+		if (filme == null) {
+			throw new LocadoraException("Filme vazio");
+		}
+
+		if (filme.getEstoque() == 0) {
+			throw new FilmeSemEstoqueException("Filme sem estoque");
+		}
+
 		Locacao locacao = new Locacao();
 		locacao.setFilme(filme);
 		locacao.setUsuario(usuario);
