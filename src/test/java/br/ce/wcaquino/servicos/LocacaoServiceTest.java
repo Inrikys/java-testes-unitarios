@@ -1,6 +1,7 @@
 package br.ce.wcaquino.servicos;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -23,7 +24,7 @@ import br.ce.wcaquino.exceptions.LocadoraException;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTest {
-	
+
 	private LocacaoService service;
 
 	@Rule
@@ -31,39 +32,39 @@ public class LocacaoServiceTest {
 
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
-	
+
 	// Executa antes dos testes
 	@Before
 	public void setup() {
 		service = new LocacaoService();
 	}
-	
+
 	// Executa depois dos testes
 	@After
 	public void tearDown() {
 	}
-	
+
 	// Executa antes da classe LocacaoServiceTest ser instanciada
 	@BeforeClass
 	public static void setupClass() {
 	}
-	
+
 	// Executa depois da classe LocacaoServiceTest ser destruida
 	@AfterClass
 	public static void tearDownClass() {
 	}
-	
+
 	@Test
-	public void testeLocacao() throws Exception {
+	public void deveAlugarFilme() throws Exception {
 
 		// Cenario
 		service = new LocacaoService();
 		Usuario usuario = new Usuario("Usuario 1");
 		Filme filme = new Filme("Filme 1", 2, 5.0);
-		
+
 		List<Filme> filmes = new ArrayList<Filme>();
 		filmes.add(filme);
-		
+
 		// Ação
 		Locacao locacao = service.alugarFilme(usuario, filmes);
 
@@ -79,12 +80,12 @@ public class LocacaoServiceTest {
 	// VERIFICAR SE ESTÁ TRATANDO EXCEÇÕES
 	// Forma elegante
 	@Test(expected = FilmeSemEstoqueException.class)
-	public void testeLocacao_filmeSemEstoque() throws Exception {
+	public void naoDeveAlugarFilmeSemEstoque_1() throws Exception {
 
 		// Cenario
-		Usuario usuario = new Usuario("Usuario 1");		
+		Usuario usuario = new Usuario("Usuario 1");
 		Filme filme = new Filme("Filme 1", 0, 5.0);
-		
+
 		List<Filme> filmes = new ArrayList<Filme>();
 		filmes.add(filme);
 
@@ -98,12 +99,12 @@ public class LocacaoServiceTest {
 	// Forma robusta
 	// Captura exceção e verifica mensagem
 	@Test
-	public void testeLocacao_filmeSemEstoque_2() {
+	public void naoDeveAlugarFilmeSemEstoque_2() {
 
 		// Cenario
 		Usuario usuario = new Usuario("Usuario 1");
 		Filme filme = new Filme("Filme 1", 0, 5.0);
-		
+
 		List<Filme> filmes = new ArrayList<Filme>();
 		filmes.add(filme);
 
@@ -119,12 +120,12 @@ public class LocacaoServiceTest {
 
 	// Forma recente
 	@Test
-	public void testeLocacao_filmeSemEstoque_3() throws Exception {
+	public void naoDeveAlugarFilmeSemEstoque_3() throws Exception {
 
 		// Cenario
 		Usuario usuario = new Usuario("Usuario 1");
 		Filme filme = new Filme("Filme 1", 0, 5.0);
-		
+
 		List<Filme> filmes = new ArrayList<Filme>();
 		filmes.add(filme);
 
@@ -138,11 +139,11 @@ public class LocacaoServiceTest {
 
 	// Forma Robusta
 	@Test
-	public void testLocacao_usuarioVazio() throws FilmeSemEstoqueException {
+	public void naoDeveAlugarFilmeSemUsuario() throws FilmeSemEstoqueException {
 
 		// Cenario
 		Filme filme = new Filme("Filme 1", 3, 5.0);
-		
+
 		List<Filme> filmes = new ArrayList<Filme>();
 		filmes.add(filme);
 
@@ -153,21 +154,103 @@ public class LocacaoServiceTest {
 			Assert.assertThat(e.getMessage(), CoreMatchers.is("Usuário vazio"));
 		}
 	}
-	
+
 	// Forma recente
 	@Test
-	public void testLocacao_filmeVazio() throws FilmeSemEstoqueException, LocadoraException {
-		
+	public void naoDeveAlugarFilmeSemFilme() throws FilmeSemEstoqueException, LocadoraException {
+
 		// Cenario
 		Usuario usuario = new Usuario("Usuario 1");
-		
+
 		// Verificação antes da ação (O que é esperado da próxima ação)
 		exception.expect(LocadoraException.class);
 		exception.expectMessage("Filme vazio");
-		
+
 		// Ação
 		service.alugarFilme(usuario, null);
 
+	}
+
+	@Test
+	public void devePagar75PcNoFilme3() throws FilmeSemEstoqueException, LocadoraException {
+
+		// Cenário
+		Usuario usuario = new Usuario("Usuario 1");
+
+		Filme f1 = new Filme("Filme 1", 2, 4.0);
+		Filme f2 = new Filme("Filme 2", 2, 4.0);
+		Filme f3 = new Filme("Filme 3", 2, 4.0);
+
+		List<Filme> filmes = Arrays.asList(f1, f2, f3);
+
+		// Ação
+		Locacao resultado = service.alugarFilme(usuario, filmes);
+
+		// Verificação
+		Assert.assertThat(resultado.getValor(), CoreMatchers.is(11.0));
+	}
+
+	@Test
+	public void devePagar50PcNoFilme4() throws FilmeSemEstoqueException, LocadoraException {
+
+		// Cenário
+		Usuario usuario = new Usuario("Usuario 1");
+
+		Filme f1 = new Filme("Filme 1", 2, 4.0);
+		Filme f2 = new Filme("Filme 2", 2, 4.0);
+		Filme f3 = new Filme("Filme 3", 2, 4.0);
+		Filme f4 = new Filme("Filme 4", 2, 4.0);
+
+		List<Filme> filmes = Arrays.asList(f1, f2, f3, f4);
+
+		// Ação
+		Locacao resultado = service.alugarFilme(usuario, filmes);
+
+		// Verificação
+		Assert.assertThat(resultado.getValor(), CoreMatchers.is(13.0));
+	}
+
+	@Test
+	public void devePagar25PcNoFilme5() throws FilmeSemEstoqueException, LocadoraException {
+
+		// Cenário
+		Usuario usuario = new Usuario("Usuario 1");
+
+		Filme f1 = new Filme("Filme 1", 2, 4.0);
+		Filme f2 = new Filme("Filme 2", 2, 4.0);
+		Filme f3 = new Filme("Filme 3", 2, 4.0);
+		Filme f4 = new Filme("Filme 4", 2, 4.0);
+		Filme f5 = new Filme("Filme 4", 2, 4.0);
+
+		List<Filme> filmes = Arrays.asList(f1, f2, f3, f4, f5);
+
+		// Ação
+		Locacao resultado = service.alugarFilme(usuario, filmes);
+
+		// Verificação
+		Assert.assertThat(resultado.getValor(), CoreMatchers.is(14.0));
+	}
+
+	@Test
+	public void devePagar0PcNoFilme6() throws FilmeSemEstoqueException, LocadoraException {
+
+		// Cenário
+		Usuario usuario = new Usuario("Usuario 1");
+
+		Filme f1 = new Filme("Filme 1", 2, 4.0);
+		Filme f2 = new Filme("Filme 2", 2, 4.0);
+		Filme f3 = new Filme("Filme 3", 2, 4.0);
+		Filme f4 = new Filme("Filme 4", 2, 4.0);
+		Filme f5 = new Filme("Filme 5", 2, 4.0);
+		Filme f6 = new Filme("Filme 6", 2, 4.0);
+
+		List<Filme> filmes = Arrays.asList(f1, f2, f3, f4, f5, f6);
+
+		// Ação
+		Locacao resultado = service.alugarFilme(usuario, filmes);
+
+		// Verificação
+		Assert.assertThat(resultado.getValor(), CoreMatchers.is(14.0));
 	}
 
 }
