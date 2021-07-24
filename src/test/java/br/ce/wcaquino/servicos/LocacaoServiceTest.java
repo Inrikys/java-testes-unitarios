@@ -2,6 +2,7 @@ package br.ce.wcaquino.servicos;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -9,6 +10,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -56,6 +58,9 @@ public class LocacaoServiceTest {
 
 	@Test
 	public void deveAlugarFilme() throws Exception {
+		
+		// Roda o teste apenas se a condição for verdadeira
+		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
 
 		// Cenario
 		service = new LocacaoService();
@@ -70,7 +75,7 @@ public class LocacaoServiceTest {
 
 		// Verificação
 		// Error collector
-		error.checkThat(locacao.getValor(), CoreMatchers.is(CoreMatchers.equalTo(5.0)));
+		error.checkThat(locacao.getValor(), CoreMatchers.is(5.0));
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()), CoreMatchers.is(true));
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)),
 				CoreMatchers.is(true));
@@ -251,6 +256,25 @@ public class LocacaoServiceTest {
 
 		// Verificação
 		Assert.assertThat(resultado.getValor(), CoreMatchers.is(14.0));
+	}
+	
+	@Test
+	public void naoDeveDevolverFilmeNoDomingoAoAlugarNoSabado() throws FilmeSemEstoqueException, LocadoraException {
+		
+		// Roda o teste apenas se a condição for verdadeira
+		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
+		
+		// Cenário
+		Usuario usuario = new Usuario("Usuario 1");
+		Filme f1 = new Filme("Filme 1", 2, 4.0);
+		List<Filme> filmes = Arrays.asList(f1);
+		
+		// Ação
+		Locacao resultado = service.alugarFilme(usuario, filmes);
+		
+		// Verificação
+		boolean isMonday = DataUtils.verificarDiaSemana(resultado.getDataRetorno(), Calendar.MONDAY);
+		Assert.assertTrue(isMonday);
 	}
 
 }
