@@ -1,5 +1,7 @@
 package br.ce.wcaquino.servicos;
 
+import static org.junit.Assert.assertThat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -23,6 +25,7 @@ import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.FilmeSemEstoqueException;
 import br.ce.wcaquino.exceptions.LocadoraException;
+import br.ce.wcaquino.matchers.MatchersProprios;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTest {
@@ -79,7 +82,9 @@ public class LocacaoServiceTest {
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()), CoreMatchers.is(true));
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)),
 				CoreMatchers.is(true));
-
+		
+		error.checkThat(locacao.getDataLocacao(), MatchersProprios.ehHoje());
+		error.checkThat(locacao.getDataRetorno(), MatchersProprios.ehHojeComDiferencaDias(1));
 	}
 
 	// VERIFICAR SE ESTÁ TRATANDO EXCEÇÕES
@@ -273,8 +278,13 @@ public class LocacaoServiceTest {
 		Locacao resultado = service.alugarFilme(usuario, filmes);
 		
 		// Verificação
-		boolean isMonday = DataUtils.verificarDiaSemana(resultado.getDataRetorno(), Calendar.MONDAY);
-		Assert.assertTrue(isMonday);
+		//boolean isMonday = DataUtils.verificarDiaSemana(resultado.getDataRetorno(), Calendar.MONDAY);
+		//Assert.assertTrue(isMonday);
+		
+		//Usando assertivas personalizadas
+		//Assert.assertThat(resultado.getDataRetorno(), new DiaSemanaMatcher(Calendar.MONDAY));
+		Assert.assertThat(resultado.getDataRetorno(), MatchersProprios.caiEm(Calendar.MONDAY));
+		assertThat(resultado.getDataRetorno(), MatchersProprios.caiNumaSegunda());
 	}
 
 }
