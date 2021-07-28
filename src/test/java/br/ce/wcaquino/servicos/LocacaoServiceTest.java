@@ -20,6 +20,8 @@ import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
 
+import br.ce.wcaquino.builders.FilmeBuilder;
+import br.ce.wcaquino.builders.UsuarioBuilder;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
@@ -67,8 +69,14 @@ public class LocacaoServiceTest {
 
 		// Cenario
 		service = new LocacaoService();
-		Usuario usuario = new Usuario("Usuario 1");
-		Filme filme = new Filme("Filme 1", 2, 5.0);
+	
+		// Usuario usuario = new Usuario("Usuario 1");	
+		// Utilizando Data Builder
+		Usuario usuario = UsuarioBuilder.umUsuario().agora();
+		
+		//Filme filme = new Filme("Filme 1", 2, 5.0);
+		// Utilizando Data Builder
+		Filme filme = FilmeBuilder.umFilme().comValor(4.0).agora();
 
 		List<Filme> filmes = new ArrayList<Filme>();
 		filmes.add(filme);
@@ -78,7 +86,7 @@ public class LocacaoServiceTest {
 
 		// Verificação
 		// Error collector
-		error.checkThat(locacao.getValor(), CoreMatchers.is(5.0));
+		error.checkThat(locacao.getValor(), CoreMatchers.is(4.0));
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()), CoreMatchers.is(true));
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)),
 				CoreMatchers.is(true));
@@ -94,7 +102,10 @@ public class LocacaoServiceTest {
 
 		// Cenario
 		Usuario usuario = new Usuario("Usuario 1");
-		Filme filme = new Filme("Filme 1", 0, 5.0);
+		
+		//Filme filme = new Filme("Filme 1", 0, 5.0);
+		//Utilizando Data Builder
+		Filme filme = FilmeBuilder.umFilme().semEstoque().agora();
 
 		List<Filme> filmes = new ArrayList<Filme>();
 		filmes.add(filme);
