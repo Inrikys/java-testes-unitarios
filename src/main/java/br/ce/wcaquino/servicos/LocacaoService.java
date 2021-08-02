@@ -6,6 +6,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import br.ce.wcaquino.daos.LocacaoDAO;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
@@ -14,6 +15,9 @@ import br.ce.wcaquino.exceptions.LocadoraException;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoService {
+
+	private LocacaoDAO dao;
+	private SPCService spcService;
 
 	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws FilmeSemEstoqueException, LocadoraException {
 
@@ -29,6 +33,12 @@ public class LocacaoService {
 			if (f.getEstoque() == 0) {
 				throw new FilmeSemEstoqueException("Filme sem estoque");
 			}
+		}
+		
+		// o padr„o do mockito È retornar false, ent„o
+		// por padr„o n„o ir· entrar nesse if
+		if (spcService.possuiNegativacao(usuario)) {
+			throw new LocadoraException("Usu·rio negativado");
 		}
 
 		Locacao locacao = new Locacao();
@@ -65,16 +75,25 @@ public class LocacaoService {
 		// Entrega no dia seguinte
 		Date dataEntrega = new Date();
 		dataEntrega = adicionarDias(dataEntrega, 1);
-		
-		if(DataUtils.verificarDiaSemana(dataEntrega, Calendar.SUNDAY)) {
+
+		if (DataUtils.verificarDiaSemana(dataEntrega, Calendar.SUNDAY)) {
 			dataEntrega = adicionarDias(dataEntrega, 1);
 		}
-		
+
 		locacao.setDataRetorno(dataEntrega);
 
 		// Salvando a locacao...
-		// TODO adicionar m√©todo para salvar
+		dao.salvar(locacao);
 
 		return locacao;
 	}
+
+	public void setLocacaoDAO(LocacaoDAO dao) {
+		this.dao = dao;
+	}
+
+	public void setSPCService(SPCService spc) {
+		spcService = spc;
+	}
+
 }

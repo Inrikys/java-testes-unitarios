@@ -19,9 +19,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 
 import br.ce.wcaquino.builders.FilmeBuilder;
 import br.ce.wcaquino.builders.UsuarioBuilder;
+import br.ce.wcaquino.daos.LocacaoDAO;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
@@ -34,6 +36,10 @@ public class LocacaoServiceTest {
 
 	private LocacaoService service;
 
+	// MOCKS
+	private SPCService spc;
+	private LocacaoDAO dao;
+
 	@Rule
 	public ErrorCollector error = new ErrorCollector();
 
@@ -44,6 +50,12 @@ public class LocacaoServiceTest {
 	@Before
 	public void setup() {
 		service = new LocacaoService();
+		dao = Mockito.mock(LocacaoDAO.class);
+		// injeção de dependencia dentro de LocacaoService
+		service.setLocacaoDAO(dao);
+		spc = Mockito.mock(SPCService.class);
+		// injeção de dependencia dentro de LocacaoService
+		service.setSPCService(spc);
 	}
 
 	// Executa depois dos testes
@@ -63,18 +75,19 @@ public class LocacaoServiceTest {
 
 	@Test
 	public void deveAlugarFilme() throws Exception {
-		
+
 		// Roda o teste apenas se a condição for verdadeira
 		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
 
 		// Cenario
-		service = new LocacaoService();
-	
-		// Usuario usuario = new Usuario("Usuario 1");	
+		// Objeto instanciado na função setup
+		// service = new LocacaoService();
+
+		// Usuario usuario = new Usuario("Usuario 1");
 		// Utilizando Data Builder
 		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		
-		//Filme filme = new Filme("Filme 1", 2, 5.0);
+
+		// Filme filme = new Filme("Filme 1", 2, 5.0);
 		// Utilizando Data Builder
 		Filme filme = FilmeBuilder.umFilme().comValor(4.0).agora();
 
@@ -90,7 +103,7 @@ public class LocacaoServiceTest {
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()), CoreMatchers.is(true));
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)),
 				CoreMatchers.is(true));
-		
+
 		error.checkThat(locacao.getDataLocacao(), MatchersProprios.ehHoje());
 		error.checkThat(locacao.getDataRetorno(), MatchersProprios.ehHojeComDiferencaDias(1));
 	}
@@ -102,9 +115,9 @@ public class LocacaoServiceTest {
 
 		// Cenario
 		Usuario usuario = new Usuario("Usuario 1");
-		
-		//Filme filme = new Filme("Filme 1", 0, 5.0);
-		//Utilizando Data Builder
+
+		// Filme filme = new Filme("Filme 1", 0, 5.0);
+		// Utilizando Data Builder
 		Filme filme = FilmeBuilder.umFilme().semEstoque().agora();
 
 		List<Filme> filmes = new ArrayList<Filme>();
@@ -273,29 +286,58 @@ public class LocacaoServiceTest {
 		// Verificação
 		Assert.assertThat(resultado.getValor(), CoreMatchers.is(14.0));
 	}
-	
+
 	@Test
 	public void naoDeveDevolverFilmeNoDomingoAoAlugarNoSabado() throws FilmeSemEstoqueException, LocadoraException {
-		
+
 		// Roda o teste apenas se a condição for verdadeira
 		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
-		
+
 		// Cenário
 		Usuario usuario = new Usuario("Usuario 1");
 		Filme f1 = new Filme("Filme 1", 2, 4.0);
 		List<Filme> filmes = Arrays.asList(f1);
-		
+
 		// Ação
 		Locacao resultado = service.alugarFilme(usuario, filmes);
-		
+
 		// Verificação
-		//boolean isMonday = DataUtils.verificarDiaSemana(resultado.getDataRetorno(), Calendar.MONDAY);
-		//Assert.assertTrue(isMonday);
-		
-		//Usando assertivas personalizadas
-		//Assert.assertThat(resultado.getDataRetorno(), new DiaSemanaMatcher(Calendar.MONDAY));
+		// boolean isMonday = DataUtils.verificarDiaSemana(resultado.getDataRetorno(),
+		// Calendar.MONDAY);
+		// Assert.assertTrue(isMonday);
+
+		// Usando assertivas personalizadas
+		// Assert.assertThat(resultado.getDataRetorno(), new
+		// DiaSemanaMatcher(Calendar.MONDAY));
 		Assert.assertThat(resultado.getDataRetorno(), MatchersProprios.caiEm(Calendar.MONDAY));
 		assertThat(resultado.getDataRetorno(), MatchersProprios.caiNumaSegunda());
+	}
+
+	// MOCKITO
+
+	@Test
+	public void naoDeveAlugarFilmeParaNegativadoSPC() throws FilmeSemEstoqueException, LocadoraException {
+		
+		// Cenário
+		// utilizando data builder
+		Usuario usuario = UsuarioBuilder.umUsuario().agora();
+		Usuario usuario2 = UsuarioBuilder.umUsuario().comNome("Usuario 2").agora();
+		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
+		
+		// Quando a função possuiNegativacao passando usuario
+		// for chamada, retorne true
+		// compara através do equals e hash code, ou seja
+		// se os usuarios, de acordo com a entidade, tiverem o mesmo nome
+		// a regra se aplica a todos
+		Mockito.when(spc.possuiNegativacao(usuario)).thenReturn(true);
+		
+		exception.expect(LocadoraException.class);
+		exception.expectMessage("Usuário negativado");
+		
+		// Ação
+		service.alugarFilme(usuario, filmes);
+		
+		
 	}
 
 }
