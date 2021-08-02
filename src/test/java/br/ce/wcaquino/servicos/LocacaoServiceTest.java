@@ -22,6 +22,7 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
 import br.ce.wcaquino.builders.FilmeBuilder;
+import br.ce.wcaquino.builders.LocacaoBuilder;
 import br.ce.wcaquino.builders.UsuarioBuilder;
 import br.ce.wcaquino.daos.LocacaoDAO;
 import br.ce.wcaquino.entidades.Filme;
@@ -39,6 +40,7 @@ public class LocacaoServiceTest {
 	// MOCKS
 	private SPCService spc;
 	private LocacaoDAO dao;
+	private EmailService email;
 
 	@Rule
 	public ErrorCollector error = new ErrorCollector();
@@ -50,12 +52,18 @@ public class LocacaoServiceTest {
 	@Before
 	public void setup() {
 		service = new LocacaoService();
+
 		dao = Mockito.mock(LocacaoDAO.class);
 		// injeção de dependencia dentro de LocacaoService
 		service.setLocacaoDAO(dao);
+
 		spc = Mockito.mock(SPCService.class);
 		// injeção de dependencia dentro de LocacaoService
 		service.setSPCService(spc);
+
+		email = Mockito.mock(EmailService.class);
+		service.setEmailService(email);
+
 	}
 
 	// Executa depois dos testes
@@ -314,30 +322,57 @@ public class LocacaoServiceTest {
 	}
 
 	// MOCKITO
-
 	@Test
-	public void naoDeveAlugarFilmeParaNegativadoSPC() throws FilmeSemEstoqueException, LocadoraException {
-		
+	public void naoDeveAlugarFilmeParaNegativadoSPC() throws FilmeSemEstoqueException {
+
 		// Cenário
 		// utilizando data builder
 		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		Usuario usuario2 = UsuarioBuilder.umUsuario().comNome("Usuario 2").agora();
 		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
-		
+
 		// Quando a função possuiNegativacao passando usuario
 		// for chamada, retorne true
 		// compara através do equals e hash code, ou seja
 		// se os usuarios, de acordo com a entidade, tiverem o mesmo nome
 		// a regra se aplica a todos
 		Mockito.when(spc.possuiNegativacao(usuario)).thenReturn(true);
-		
-		exception.expect(LocadoraException.class);
-		exception.expectMessage("Usuário negativado");
-		
+
 		// Ação
-		service.alugarFilme(usuario, filmes);
-		
-		
+		try {
+			service.alugarFilme(usuario, filmes);
+
+			// Verificacao
+			Assert.fail();
+		} catch (LocadoraException e) {
+			Assert.assertThat(e.getMessage(), CoreMatchers.is("Usuário negativado"));
+		}
+
+		// Verifica se o método possuiNegativacao foi chamado e recebeu o
+		// usuario correto como parâmetro
+		// Não necessário, pois o Mockito.when acima retorna true se a função foi chamada
+		// exemplo apenas para fins acadêmicos
+		Mockito.verify(spc).possuiNegativacao(usuario);
+	}
+
+	@Test
+	public void deveEnviarEmailParaLocacoesAtrasadas() throws FilmeSemEstoqueException, LocadoraException {
+		// Cenário
+		Usuario usuario = UsuarioBuilder.umUsuario().agora();
+
+		Locacao l1 = LocacaoBuilder.umLocacao().comUsuario(usuario)
+				.comDataRetorno(DataUtils.obterDataComDiferencaDias(-2)).agora();
+		List<Locacao> locacoes = Arrays.asList(l1);
+
+		// quando a função obterLocacoesPendenter for chamada, retornará locacoes
+		Mockito.when(dao.obterLocacoesPendentes()).thenReturn(locacoes);
+
+		// Ação
+		service.notificarAtrasos();
+
+		// Verificação
+		// Verifica que a função notificar atraso foi chamada
+		// e se o usuário correto foi passado por parâmetro
+		Mockito.verify(email).notificarAtraso(usuario);
 	}
 
 }
