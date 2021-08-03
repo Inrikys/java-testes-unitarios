@@ -335,7 +335,10 @@ public class LocacaoServiceTest {
 		// compara através do equals e hash code, ou seja
 		// se os usuarios, de acordo com a entidade, tiverem o mesmo nome
 		// a regra se aplica a todos
-		Mockito.when(spc.possuiNegativacao(usuario)).thenReturn(true);
+		//Mockito.when(spc.possuiNegativacao(usuario)).thenReturn(true);
+		
+		// formula com usuário genérico
+		Mockito.when(spc.possuiNegativacao(Mockito.any(Usuario.class))).thenReturn(true);
 
 		// Ação
 		try {
@@ -349,7 +352,8 @@ public class LocacaoServiceTest {
 
 		// Verifica se o método possuiNegativacao foi chamado e recebeu o
 		// usuario correto como parâmetro
-		// Não necessário, pois o Mockito.when acima retorna true se a função foi chamada
+		// Não necessário, pois o Mockito.when acima retorna true se a função foi
+		// chamada
 		// exemplo apenas para fins acadêmicos
 		Mockito.verify(spc).possuiNegativacao(usuario);
 	}
@@ -358,10 +362,19 @@ public class LocacaoServiceTest {
 	public void deveEnviarEmailParaLocacoesAtrasadas() throws FilmeSemEstoqueException, LocadoraException {
 		// Cenário
 		Usuario usuario = UsuarioBuilder.umUsuario().agora();
+		Usuario usuario2 = UsuarioBuilder.umUsuario().comNome("Usuario em dia").agora();
+		Usuario usuario3 = UsuarioBuilder.umUsuario().comNome("Outro atrasado").agora();
 
-		Locacao l1 = LocacaoBuilder.umLocacao().comUsuario(usuario)
-				.comDataRetorno(DataUtils.obterDataComDiferencaDias(-2)).agora();
-		List<Locacao> locacoes = Arrays.asList(l1);
+		// Locações com atraso
+		Locacao l1 = LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario).agora();
+		// duas locações
+		Locacao l3 = LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario3).agora();
+		Locacao l4 = LocacaoBuilder.umLocacao().atrasado().comUsuario(usuario3).agora();
+
+		// Locação em dia
+		Locacao l2 = LocacaoBuilder.umLocacao().comUsuario(usuario2).agora();
+
+		List<Locacao> locacoes = Arrays.asList(l1, l2, l3, l4);
 
 		// quando a função obterLocacoesPendenter for chamada, retornará locacoes
 		Mockito.when(dao.obterLocacoesPendentes()).thenReturn(locacoes);
@@ -370,9 +383,37 @@ public class LocacaoServiceTest {
 		service.notificarAtrasos();
 
 		// Verificação
+
 		// Verifica que a função notificar atraso foi chamada
 		// e se o usuário correto foi passado por parâmetro
+		// verifica também quantas vezes o usuário foi passado por parametro
 		Mockito.verify(email).notificarAtraso(usuario);
+
+		// Usuário 3 fez duas locações
+		// pelo menos 1 email foi enviado
+		Mockito.verify(email, Mockito.atLeastOnce()).notificarAtraso(usuario3);
+		// exatamente 2 emails foram enviados
+		// Mockito.verify(email, Mockito.times(2)).notificarAtraso(usuario3);
+		// pelo menos 2 emails foram enviados
+		// Mockito.verify(email, Mockito.atLeast(2)).notificarAtraso(usuario3);
+		// no máximo 5 emails foram enviados
+		// Mockito.verify(email, Mockito.atMost(5)).notificarAtraso(usuario3);
+
+		// Usuario 2 não deve receber e-mail, pois está em dia
+		Mockito.verify(email, Mockito.never()).notificarAtraso(usuario2);
+
+		// Verificação genérica sem validação de usuários específicos
+		Mockito.verify(email, Mockito.times(3)).notificarAtraso(Mockito.any(Usuario.class));
+
+		// Verificar se não houve mais chamadas para a classe email
+		// Se houve 3 locações enviadas, deve haver 3 chamadas, caso contrário
+		// ocorrerá uma falha
+		Mockito.verifyNoMoreInteractions(email);
+
+		// Verificar se uma classe que não é para ser chamada não foi chamada
+		// exemplificado apenas para fins academicos, pois spc não faz parte do escopo
+		// desse teste
+		// Mockito.verifyZeroInteractions(spc);
 	}
 
 }
