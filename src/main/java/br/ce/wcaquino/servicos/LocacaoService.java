@@ -35,10 +35,18 @@ public class LocacaoService {
 				throw new FilmeSemEstoqueException("Filme sem estoque");
 			}
 		}
-
+		
+		boolean isNegativado;
+		
 		// o padrão do mockito é retornar false, então
 		// por padrão não irá entrar nesse if
-		if (spcService.possuiNegativacao(usuario)) {
+		try {
+			isNegativado = spcService.possuiNegativacao(usuario);
+		} catch (Exception e) {
+			throw new LocadoraException("Problemas com SPC, tente novamente");
+		}
+		
+		if (isNegativado) {
 			throw new LocadoraException("Usuário negativado");
 		}
 
@@ -92,7 +100,7 @@ public class LocacaoService {
 	public void notificarAtrasos() {
 		List<Locacao> locacoes = dao.obterLocacoesPendentes();
 		for (Locacao locacao : locacoes) {
-			if(locacao.getDataRetorno().before(new Date())) {
+			if (locacao.getDataRetorno().before(new Date())) {
 				emailService.notificarAtraso(locacao.getUsuario());
 			}
 		}

@@ -37,17 +37,17 @@ import br.ce.wcaquino.matchers.MatchersProprios;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTest {
-	
+
 	// MOCKS
 	@Mock
 	private SPCService spc;
-	
+
 	@Mock
 	private LocacaoDAO dao;
-	
+
 	@Mock
 	private EmailService email;
-	
+
 	// Classe onde os Mocks serão injetados
 	@InjectMocks
 	private LocacaoService service;
@@ -322,7 +322,7 @@ public class LocacaoServiceTest {
 
 	// MOCKITO
 	@Test
-	public void naoDeveAlugarFilmeParaNegativadoSPC() throws FilmeSemEstoqueException {
+	public void naoDeveAlugarFilmeParaNegativadoSPC() throws Exception {
 
 		// Cenário
 		// utilizando data builder
@@ -334,8 +334,8 @@ public class LocacaoServiceTest {
 		// compara através do equals e hash code, ou seja
 		// se os usuarios, de acordo com a entidade, tiverem o mesmo nome
 		// a regra se aplica a todos
-		//Mockito.when(spc.possuiNegativacao(usuario)).thenReturn(true);
-		
+		// Mockito.when(spc.possuiNegativacao(usuario)).thenReturn(true);
+
 		// formula com usuário genérico
 		Mockito.when(spc.possuiNegativacao(Mockito.any(Usuario.class))).thenReturn(true);
 
@@ -413,6 +413,26 @@ public class LocacaoServiceTest {
 		// exemplificado apenas para fins academicos, pois spc não faz parte do escopo
 		// desse teste
 		// Mockito.verifyZeroInteractions(spc);
+	}
+
+	@Test
+	public void deveTratarErroNoSPC() throws Exception {
+
+		// Cenário
+		Usuario usuario = UsuarioBuilder.umUsuario().agora();
+		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
+		
+		Mockito.when(spc.possuiNegativacao(usuario)).thenThrow(new Exception("Falha catastrófica"));
+		
+		// Verificação
+		exception.expect(LocadoraException.class);
+		exception.expectMessage("Problemas com SPC, tente novamente");
+		
+		// Ação
+		service.alugarFilme(usuario, filmes);
+		
+		
+
 	}
 
 }
