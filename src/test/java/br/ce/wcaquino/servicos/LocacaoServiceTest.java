@@ -19,7 +19,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import br.ce.wcaquino.builders.FilmeBuilder;
 import br.ce.wcaquino.builders.LocacaoBuilder;
@@ -34,13 +37,20 @@ import br.ce.wcaquino.matchers.MatchersProprios;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTest {
-
-	private LocacaoService service;
-
+	
 	// MOCKS
+	@Mock
 	private SPCService spc;
+	
+	@Mock
 	private LocacaoDAO dao;
+	
+	@Mock
 	private EmailService email;
+	
+	// Classe onde os Mocks serão injetados
+	@InjectMocks
+	private LocacaoService service;
 
 	@Rule
 	public ErrorCollector error = new ErrorCollector();
@@ -51,19 +61,8 @@ public class LocacaoServiceTest {
 	// Executa antes dos testes
 	@Before
 	public void setup() {
-		service = new LocacaoService();
-
-		dao = Mockito.mock(LocacaoDAO.class);
-		// injeção de dependencia dentro de LocacaoService
-		service.setLocacaoDAO(dao);
-
-		spc = Mockito.mock(SPCService.class);
-		// injeção de dependencia dentro de LocacaoService
-		service.setSPCService(spc);
-
-		email = Mockito.mock(EmailService.class);
-		service.setEmailService(email);
-
+		// Configurando injeção de dependência de Mocks na classe Locacao Service
+		MockitoAnnotations.initMocks(this);
 	}
 
 	// Executa depois dos testes
