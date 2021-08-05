@@ -19,6 +19,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -430,9 +431,33 @@ public class LocacaoServiceTest {
 		
 		// Ação
 		service.alugarFilme(usuario, filmes);
-		
-		
-
 	}
 
+	@Test
+	public void deveProrrogarUmaLocacao() throws FilmeSemEstoqueException, LocadoraException {
+		
+		// Cenário
+		Locacao locacao = LocacaoBuilder.umLocacao().agora();
+		
+		// Ação
+		service.prorrogarLocacao(locacao, 3);
+		
+		// Verificação
+		// Não tem como verificar se um objeto dessa função passou pela função dao.salvar,
+		// pois na função service.prorrogarLocacao() há um objeto local que é passado como
+		// parametro da função dao.salvar()
+		
+		// Para verificarmos esse valor, é necessário o usdo do ArgumentCaptor
+		
+		// Captura objeto passado pela função dao.salvar
+		ArgumentCaptor<Locacao> argCapt = ArgumentCaptor.forClass(Locacao.class);
+		Mockito.verify(dao).salvar(argCapt.capture());
+		Locacao locacaoRetornada = argCapt.getValue();
+		
+		// Valor retornado -> valor * dias -> 5 * 3
+		Assert.assertThat(locacaoRetornada.getValor(), CoreMatchers.is(15.0));
+		Assert.assertThat(locacaoRetornada.getDataLocacao(), MatchersProprios.ehHoje());
+		Assert.assertThat(locacaoRetornada.getDataRetorno(), MatchersProprios.ehHojeComDiferencaDias(3));
+	}
+	
 }
