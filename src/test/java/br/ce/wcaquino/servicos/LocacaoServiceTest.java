@@ -19,11 +19,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import br.ce.wcaquino.builders.FilmeBuilder;
 import br.ce.wcaquino.builders.LocacaoBuilder;
@@ -37,6 +41,11 @@ import br.ce.wcaquino.exceptions.LocadoraException;
 import br.ce.wcaquino.matchers.MatchersProprios;
 import br.ce.wcaquino.utils.DataUtils;
 
+// Configuração do PowerMock
+// Runner para PowerMock
+@RunWith(PowerMockRunner.class)
+// Preparar classe para utilizar PowerMock
+@PrepareForTest({ LocacaoService.class, DataUtils.class })
 public class LocacaoServiceTest {
 
 	// MOCKS
@@ -85,7 +94,9 @@ public class LocacaoServiceTest {
 	public void deveAlugarFilme() throws Exception {
 
 		// Roda o teste apenas se a condição for verdadeira
-		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
+		// Posso resolver isso usando PowerMock
+		// Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(),
+		// Calendar.SATURDAY));
 
 		// Cenario
 		// Objeto instanciado na função setup
@@ -102,18 +113,32 @@ public class LocacaoServiceTest {
 		List<Filme> filmes = new ArrayList<Filme>();
 		filmes.add(filme);
 
+		// Solucionando problema com PowerMock
+		// Quando tiver uma new Date() <- sem argumentos
+		// Mockar a data escolhida (um dia que não seja sábado)
+		PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(28, 4, 2017));
+
 		// Ação
 		Locacao locacao = service.alugarFilme(usuario, filmes);
 
 		// Verificação
 		// Error collector
 		error.checkThat(locacao.getValor(), CoreMatchers.is(4.0));
-		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()), CoreMatchers.is(true));
-		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)),
-				CoreMatchers.is(true));
+
+		// Exemplos
+		// error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()),
+		// CoreMatchers.is(true));
+		// error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(),
+		// DataUtils.obterDataComDiferencaDias(1)),
+		// CoreMatchers.is(true));
 
 		error.checkThat(locacao.getDataLocacao(), MatchersProprios.ehHoje());
 		error.checkThat(locacao.getDataRetorno(), MatchersProprios.ehHojeComDiferencaDias(1));
+
+		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), DataUtils.obterData(28, 4, 2017)),
+				CoreMatchers.is(true));
+		error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterData(29, 4, 2017)),
+				CoreMatchers.is(true));
 	}
 
 	// VERIFICAR SE ESTÁ TRATANDO EXCEÇÕES
@@ -296,15 +321,22 @@ public class LocacaoServiceTest {
 	}
 
 	@Test
-	public void naoDeveDevolverFilmeNoDomingoAoAlugarNoSabado() throws FilmeSemEstoqueException, LocadoraException {
+	public void naoDeveDevolverFilmeNoDomingoAoAlugarNoSabado() throws Exception {
 
 		// Roda o teste apenas se a condição for verdadeira
-		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
+		// Esse problema pode ser resolvido com PowerMock
+		// Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(),
+		// Calendar.SATURDAY));
 
 		// Cenário
 		Usuario usuario = new Usuario("Usuario 1");
 		Filme f1 = new Filme("Filme 1", 2, 4.0);
 		List<Filme> filmes = Arrays.asList(f1);
+
+		// Solucionando problema com PowerMock
+		// Quando tiver uma new Date() <- sem argumentos
+		// Mockar a data escolhida (Data que retorna um sábado)
+		PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(29, 4, 2017));
 
 		// Ação
 		Locacao resultado = service.alugarFilme(usuario, filmes);
@@ -422,42 +454,44 @@ public class LocacaoServiceTest {
 		// Cenário
 		Usuario usuario = UsuarioBuilder.umUsuario().agora();
 		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
-		
+
 		Mockito.when(spc.possuiNegativacao(usuario)).thenThrow(new Exception("Falha catastrófica"));
-		
+
 		// Verificação
 		exception.expect(LocadoraException.class);
 		exception.expectMessage("Problemas com SPC, tente novamente");
-		
+
 		// Ação
 		service.alugarFilme(usuario, filmes);
 	}
 
 	@Test
 	public void deveProrrogarUmaLocacao() throws FilmeSemEstoqueException, LocadoraException {
-		
+
 		// Cenário
 		Locacao locacao = LocacaoBuilder.umLocacao().agora();
-		
+
 		// Ação
 		service.prorrogarLocacao(locacao, 3);
-		
+
 		// Verificação
-		// Não tem como verificar se um objeto dessa função passou pela função dao.salvar,
-		// pois na função service.prorrogarLocacao() há um objeto local que é passado como
+		// Não tem como verificar se um objeto dessa função passou pela função
+		// dao.salvar,
+		// pois na função service.prorrogarLocacao() há um objeto local que é passado
+		// como
 		// parametro da função dao.salvar()
-		
+
 		// Para verificarmos esse valor, é necessário o usdo do ArgumentCaptor
-		
+
 		// Captura objeto passado pela função dao.salvar
 		ArgumentCaptor<Locacao> argCapt = ArgumentCaptor.forClass(Locacao.class);
 		Mockito.verify(dao).salvar(argCapt.capture());
 		Locacao locacaoRetornada = argCapt.getValue();
-		
+
 		// Valor retornado -> valor * dias -> 5 * 3
 		Assert.assertThat(locacaoRetornada.getValor(), CoreMatchers.is(15.0));
 		Assert.assertThat(locacaoRetornada.getDataLocacao(), MatchersProprios.ehHoje());
 		Assert.assertThat(locacaoRetornada.getDataRetorno(), MatchersProprios.ehHojeComDiferencaDias(3));
 	}
-	
+
 }
