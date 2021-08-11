@@ -26,3 +26,15 @@ JUnit
 - Testes parametrizados
 - Matchers
 - Suite de testes
+
+Mockito
+- Expectativas/Retorno
+- Verificação
+- Lançamento de exceções
+- Capturando argumentos
+- Spy
+
+Power Mock (Power Mockito)
+- Construtores
+- Métodos estáticos
+- Métodos privados
