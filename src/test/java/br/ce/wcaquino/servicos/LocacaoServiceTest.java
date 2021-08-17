@@ -2,6 +2,7 @@ package br.ce.wcaquino.servicos;
 
 import static org.junit.Assert.assertThat;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -17,16 +18,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.Spy;
 
 import br.ce.wcaquino.builders.FilmeBuilder;
 import br.ce.wcaquino.builders.LocacaoBuilder;
@@ -40,11 +37,7 @@ import br.ce.wcaquino.exceptions.LocadoraException;
 import br.ce.wcaquino.matchers.MatchersProprios;
 import br.ce.wcaquino.utils.DataUtils;
 
-// Configuração do PowerMock
-// Runner para PowerMock
-@RunWith(PowerMockRunner.class)
-// Preparar classe para utilizar PowerMock
-@PrepareForTest({ LocacaoService.class })
+
 public class LocacaoServiceTest {
 
 	// MOCKS
@@ -58,7 +51,7 @@ public class LocacaoServiceTest {
 	private EmailService email;
 
 	// Classe onde os Mocks serão injetados
-	@InjectMocks
+	@InjectMocks @Spy
 	private LocacaoService service;
 
 	@Rule
@@ -72,7 +65,6 @@ public class LocacaoServiceTest {
 	public void setup() {
 		// Configurando injeção de dependência de Mocks na classe Locacao Service
 		MockitoAnnotations.initMocks(this);
-		service = PowerMockito.spy(service);
 	}
 
 	// Executa depois dos testes
@@ -93,15 +85,7 @@ public class LocacaoServiceTest {
 	@Test
 	public void deveAlugarFilme() throws Exception {
 
-		// Roda o teste apenas se a condição for verdadeira
-		// Posso resolver isso usando PowerMock
-		// Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(),
-		// Calendar.SATURDAY));
-
 		// Cenario
-		// Objeto instanciado na função setup
-		// service = new LocacaoService();
-
 		// Usuario usuario = new Usuario("Usuario 1");
 		// Utilizando Data Builder
 		Usuario usuario = UsuarioBuilder.umUsuario().agora();
@@ -119,42 +103,15 @@ public class LocacaoServiceTest {
 		// PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(28,
 		// 4, 2017));
 
-		// Solucionando problema com Power Mock usando métodos estáticos
-		Calendar calendar = Calendar.getInstance();
-		calendar.set(Calendar.DAY_OF_MONTH, 28);
-		calendar.set(Calendar.MONTH, Calendar.APRIL);
-		calendar.set(Calendar.YEAR, 2017);
-		PowerMockito.mockStatic(Calendar.class);
-		PowerMockito.when(Calendar.getInstance()).thenReturn(calendar);
+		Mockito.doReturn(DataUtils.obterData(28, 4, 2017)).when(service).obterData();
+
 
 		// Ação
 		Locacao locacao = service.alugarFilme(usuario, filmes);
 
 		// Verificação
-
-		// Verificar se construtor foi chamado
-		// expectativa padrão -> ser chamado APENAS uma vez,
-		// caso tenha sido executado mais de uma vez -> falha
-		// PowerMockito.verifyNew(Date.class).withNoArguments();
-		// Deve ser especificado a quantidade de vezes
-		// PowerMockito.verifyNew(Date.class, Mockito.times(2)).withNoArguments();
-
 		// Error collector
 		error.checkThat(locacao.getValor(), CoreMatchers.is(4.0));
-
-		// Exemplos
-		// error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()),
-		// CoreMatchers.is(true));
-		// error.checkThat(DataUtils.isMesmaData(locacao.getDataRetorno(),
-		// DataUtils.obterDataComDiferencaDias(1)),
-		// CoreMatchers.is(true));
-
-		// função ehHoje() e ehHojeComDiferencialDias() utilizam DataUtils (foi
-		// configurada para receber os valores
-		// do Power Mock
-		// error.checkThat(locacao.getDataLocacao(), MatchersProprios.ehHoje());
-		// error.checkThat(locacao.getDataRetorno(),
-		// MatchersProprios.ehHojeComDiferencaDias(1));
 
 		error.checkThat(DataUtils.isMesmaData(locacao.getDataLocacao(), DataUtils.obterData(28, 4, 2017)),
 				CoreMatchers.is(true));
@@ -344,45 +301,17 @@ public class LocacaoServiceTest {
 	@Test
 	public void naoDeveDevolverFilmeNoDomingoAoAlugarNoSabado() throws Exception {
 
-		// Roda o teste apenas se a condição for verdadeira
-		// Esse problema pode ser resolvido com PowerMock
-		// Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(),
-		// Calendar.SATURDAY));
-
 		// Cenário
 		Usuario usuario = new Usuario("Usuario 1");
 		Filme f1 = new Filme("Filme 1", 2, 4.0);
 		List<Filme> filmes = Arrays.asList(f1);
-
-		// Solucionando problema com Power Mock usando Construtores
-		// Quando tiver uma new Date() <- sem argumentos
-		// Mockar a data escolhida (Data que retorna um sábado)
-		// PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(29,
-		// 4, 2017));
-
-		// Solucionando problema com Power Mock usando métodos estáticos
-		Calendar calendar = Calendar.getInstance();
-		calendar.set(Calendar.DAY_OF_MONTH, 29);
-		calendar.set(Calendar.MONTH, Calendar.APRIL);
-		calendar.set(Calendar.YEAR, 2017);
-		PowerMockito.mockStatic(Calendar.class);
-		PowerMockito.when(Calendar.getInstance()).thenReturn(calendar);
+		
+		Mockito.doReturn(DataUtils.obterData(29, 4, 2017)).when(service).obterData();
 
 		// Ação
 		Locacao resultado = service.alugarFilme(usuario, filmes);
 
-		// Verificação
-		// boolean isMonday = DataUtils.verificarDiaSemana(resultado.getDataRetorno(),
-		// Calendar.MONDAY);
-		// Assert.assertTrue(isMonday);
-
-		// Verificação do Power Mock usando método estático
-		PowerMockito.verifyStatic(Calendar.class, Mockito.times(2));
-		Calendar.getInstance();
-
-		// Usando assertivas personalizadas
-		// Assert.assertThat(resultado.getDataRetorno(), new
-		// DiaSemanaMatcher(Calendar.MONDAY));
+		// Verificação		
 		Assert.assertThat(resultado.getDataRetorno(), MatchersProprios.caiEm(Calendar.MONDAY));
 		assertThat(resultado.getDataRetorno(), MatchersProprios.caiNumaSegunda());
 	}
@@ -528,26 +457,6 @@ public class LocacaoServiceTest {
 		Assert.assertThat(locacaoRetornada.getDataRetorno(), MatchersProprios.ehHojeComDiferencaDias(3));
 	}
 
-	@Test
-	public void deveAlugarFilme_SemCalcularValor() throws Exception {
-
-		// Cenário
-		Usuario usuario = UsuarioBuilder.umUsuario().agora();
-		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
-
-		// Definir comportamento da classe privada usando spy do Power Mock
-		// nome da função em string pois é uma função privada, está encapsulada
-		PowerMockito.doReturn(1.0).when(service, "calcularValorLocacao", filmes);
-
-		// Ação
-		Locacao locacao = service.alugarFilme(usuario, filmes);
-
-		// Verificação
-		Assert.assertThat(locacao.getValor(), CoreMatchers.is(1.0));
-
-		PowerMockito.verifyPrivate(service).invoke("calcularValorLocacao", filmes);
-
-	}
 
 	@Test
 	public void deveCalcularValorLocacao() throws Exception {
@@ -555,10 +464,14 @@ public class LocacaoServiceTest {
 		List<Filme> filmes = Arrays.asList(FilmeBuilder.umFilme().agora());
 		
 		// Ação
-		Double valor = (Double)Whitebox.invokeMethod(service, "calcularValorLocacao", filmes);
-
+		// Acessando métodos privados sem Power Mock
+		Class<LocacaoService> clazz = LocacaoService.class;
+		Method metodo = clazz.getDeclaredMethod("calcularValorLocacao", List.class);
+		metodo.setAccessible(true);
+		Double valor = (Double) metodo.invoke(service, filmes);
+				
 		// Verificação
 		Assert.assertThat(valor, CoreMatchers.is(5.0));
-	}
+	};
 
 }
