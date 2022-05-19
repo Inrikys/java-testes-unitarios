@@ -19,7 +19,7 @@ Cenário -> Ação -> Verificação
 
 JUnit
 - Assertivas
-- Tratamento de exeções
+- Tratamento de exceções
 - Before e After
 - TDD
 - Ignore e Assumptions
